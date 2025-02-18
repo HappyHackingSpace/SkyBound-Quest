@@ -1,6 +1,5 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public class PlayerController : MonoBehaviour
 {
@@ -11,7 +10,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float climbSpeed = 3f;
     private float _moveInput;
-    public float _climbInput;
+    private float _climbInput;
     private Rigidbody2D _rb;
     public float currentSpeed;
 
@@ -68,6 +67,8 @@ public class PlayerController : MonoBehaviour
         {
             _canDash = true;
         }
+
+        Flip();
     }
 
     private void FixedUpdate()
@@ -78,19 +79,22 @@ public class PlayerController : MonoBehaviour
         {
             Climb();
         }
+
         Run();
         SetJumpFallSpeed();
     }
 
     private void Climb()
     {
-        _rb.velocity = new Vector2( _rb.velocity.x, _climbInput * climbSpeed);
+        _rb.velocity = new Vector2(_rb.velocity.x, _climbInput * climbSpeed);
     }
 
     private void StartDash()
     {
         _isDashing = true;
         _canDash = false;
+
+        _rb.velocity = new Vector2(_rb.velocity.x, 0); 
 
         _dashDirection = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
 
@@ -105,13 +109,15 @@ public class PlayerController : MonoBehaviour
         StartCoroutine(StopDash());
     }
 
+
     private IEnumerator StopDash()
     {
         yield return new WaitForSeconds(dashTime);
         _isDashing = false;
 
-        _rb.velocity = new Vector2(0, _rb.velocity.y);
+        _rb.velocity = new Vector2(_rb.velocity.x, 0); 
     }
+
 
     private void Jump()
     {
@@ -148,5 +154,15 @@ public class PlayerController : MonoBehaviour
         if (groundCheck == null) return;
         Gizmos.color = Color.green;
         Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+    }
+
+    private void Flip()
+    {
+        transform.localScale = _moveInput switch
+        {
+            > 0 => new Vector3((float)1.5, (float)1.5, 1),
+            < 0 => new Vector3((float)-1.5, (float)1.5, 1),
+            _ => transform.localScale
+        };
     }
 }
