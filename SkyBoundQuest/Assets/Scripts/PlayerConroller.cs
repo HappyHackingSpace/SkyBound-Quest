@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -9,6 +10,18 @@ public class PlayerController : MonoBehaviour, IPlayerController
     private FrameInput _frameInput;
     private Vector2 _frameVelocity;
     private bool _cachedQueryStartInColliders;
+    [SerializeField] private float dashTime = 0.1f;
+    [SerializeField] private Vector2 _dashDirection;
+    [SerializeField] private float dashVelocity = 15f;
+    [SerializeField] private bool _isDashing;
+    [SerializeField] private bool _canDash = true;
+    
+    public float climbInput;
+    [SerializeField] private bool isClimbing;
+    [SerializeField] private float climbSpeed = 3f;
+    [SerializeField] private bool isTouchingWall;
+    [SerializeField] private Vector2 wallCheckSize;
+    [SerializeField] private Transform wallCheck;
 
     [Header("LAYERS")] [Tooltip("Set this to the layer your player is on")]
     public LayerMask PlayerLayer;
@@ -85,9 +98,33 @@ public class PlayerController : MonoBehaviour, IPlayerController
 
     private void Update()
     {
+        climbInput = Input.GetAxisRaw("Vertical");
+
+        // FIRST: Check if touching a wall
+        isTouchingWall = Physics2D.OverlapBox(wallCheck.position, wallCheckSize, 0, PlayerLayer);
+
+        // THEN: Check if we should start climbing
+        if (climbInput != 0 && isTouchingWall)
+        {
+            isClimbing = true;
+        }
+        else if (!isTouchingWall || climbInput == 0)
+        {
+            isClimbing = false;
+        }
+
         _time += Time.deltaTime;
         GatherInput();
+        if (Input.GetButtonDown("Dash") && _canDash)
+        {
+            StartDash();
+        }
+        if (grounded && !_isDashing)
+        {
+            _canDash = true;
+        }
     }
+
 
     private void GatherInput()
     {
@@ -95,7 +132,7 @@ public class PlayerController : MonoBehaviour, IPlayerController
         {
             JumpDown = Input.GetKeyDown(KeyCode.Period),
             JumpHeld = Input.GetKey(KeyCode.Period),
-            Move = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"))
+            Move = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")),
         };
 
         if (SnapInput)
@@ -117,6 +154,8 @@ public class PlayerController : MonoBehaviour, IPlayerController
 
     private void FixedUpdate()
     {
+        
+        if (_isDashing) return;
         CheckCollisions();
 
         HandleJump();
@@ -201,6 +240,52 @@ public class PlayerController : MonoBehaviour, IPlayerController
 
     #endregion
 
+    #region Dashing
+    private void StartDash()
+    {
+        _isDashing = true;
+        _canDash = false;
+
+        _dashDirection = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+
+        if (_dashDirection == Vector2.zero)
+        {
+            _dashDirection = new Vector2(transform.localScale.x, 0);
+        }
+
+        _dashDirection.Normalize();
+        _rb.velocity = _dashDirection * dashVelocity;
+
+        StartCoroutine(StopDash());
+    }
+    
+    private IEnumerator StopDash()
+    {
+        yield return new WaitForSeconds(dashTime);
+        _isDashing = false;
+
+        _rb.velocity = new Vector2(0, _rb.velocity.y);
+    }
+
+
+    #endregion
+
+    #region DrawGizmos
+
+    private void OnDrawGizmos()
+    {
+        if (wallCheck == null) return;
+        {
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireCube(wallCheck.position, wallCheckSize);
+        }
+    }
+
+    #endregion
+    #region Climbing
+
+    #endregion
+
     #region Horizontal
 
     private void HandleDirection()
@@ -218,11 +303,18 @@ public class PlayerController : MonoBehaviour, IPlayerController
     }
 
     #endregion
+    
 
     #region Gravity
 
     private void HandleGravity()
     {
+        if (isClimbing)
+        {
+            _frameVelocity.y = 0; // Stop gravity influence when climbing
+            return;
+        }
+    
         if (grounded && _frameVelocity.y <= 0f)
         {
             _frameVelocity.y = GroundingForce;
@@ -235,9 +327,22 @@ public class PlayerController : MonoBehaviour, IPlayerController
         }
     }
 
-    #endregion
 
-    private void ApplyMovement() => _rb.velocity = _frameVelocity;
+    #endregion
+    
+
+    private void ApplyMovement()
+    {
+        if (isClimbing)
+        {
+            _rb.velocity = new Vector2(_rb.velocity.x, climbInput * climbSpeed);
+        }
+        else
+        {
+            _rb.velocity = _frameVelocity;
+        }
+    }
+
 }
 
 public struct FrameInput
