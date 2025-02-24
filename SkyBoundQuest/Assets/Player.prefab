@@ -205,25 +205,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ff9a84a6c3ed6c4d9ce9dfce8f44eb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fallMultiplier: 4
-  lowJumpMultiplier: 4
-  jumpVelocity: 12
-  moveSpeed: 5
-  climbSpeed: 5
-  _climbInput: 0
-  currentSpeed: 0
-  groundCheck: {fileID: 2137856923179198712}
-  wallCheck: {fileID: 8202370632587097043}
-  groundCheckRadius: 0.05
-  wallCheckSize: {x: -0.07, y: 0.42}
-  groundLayer:
+  PlayerLayer:
     serializedVersion: 2
-    m_Bits: 8
-  isGrounded: 0
-  isTouchingWall: 0
-  dashVelocity: 22
-  dashTime: 0.1
-  isClimbing: 0
+    m_Bits: 0
+  SnapInput: 1
+  VerticalDeadZoneThreshold: 0.3
+  HorizontalDeadZoneThreshold: 0.1
+  MaxSpeed: 14
+  Acceleration: 120
+  GroundDeceleration: 60
+  AirDeceleration: 30
+  GroundingForce: -1.5
+  GrounderDistance: 0.05
+  JumpPower: 36
+  MaxFallSpeed: 40
+  FallAcceleration: 110
+  JumpEndEarlyGravityModifier: 3
+  CoyoteTime: 0.15
+  JumpBuffer: 0.2
+  _grounded: 0
 --- !u!70 &1916778508246000842
 CapsuleCollider2D:
   m_ObjectHideFlags: 0

@@ -1,168 +1,256 @@
-using System.Collections;
+using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
-public class PlayerController : MonoBehaviour
+public class PlayerController : MonoBehaviour, IPlayerController
 {
-    public float fallMultiplier = 2.5f;
-    public float lowJumpMultiplier = 2f;
-    public float jumpVelocity;
-
-    [SerializeField] private float moveSpeed = 5f;
-    [SerializeField] private float climbSpeed = 3f;
-    private float _moveInput;
-    private float _climbInput;
     private Rigidbody2D _rb;
-    public float currentSpeed;
+    private CapsuleCollider2D _col;
+    private FrameInput _frameInput;
+    private Vector2 _frameVelocity;
+    private bool _cachedQueryStartInColliders;
 
-    [SerializeField] private Transform groundCheck;
-    [SerializeField] private Transform wallCheck;
-    [SerializeField] private float groundCheckRadius = 0.2f;
-    [SerializeField] private Vector2 wallCheckSize;
-    [SerializeField] private LayerMask groundLayer;
-    [SerializeField] private bool isGrounded;
-    [SerializeField] private bool isTouchingWall;
+    [Header("LAYERS")] [Tooltip("Set this to the layer your player is on")]
+    public LayerMask PlayerLayer;
 
-    [Header("Dash Settings")] [SerializeField]
-    private float dashVelocity = 15f;
+    [Header("INPUT")]
+    [Tooltip(
+        "Makes all Input snap to an integer. Prevents gamepads from walking slowly. Recommended value is true to ensure gamepad/keybaord parity.")]
+    public bool SnapInput = true;
 
-    [SerializeField] private float dashTime = 0.1f;
-    private Vector2 _dashDirection;
-    private bool _isDashing;
-    private bool _canDash = true;
+    [Tooltip(
+         "Minimum input required before you mount a ladder or climb a ledge. Avoids unwanted climbing using controllers"),
+     Range(0.01f, 0.99f)]
+    public float VerticalDeadZoneThreshold = 0.3f;
 
-    [SerializeField] private bool isClimbing;
+    [Tooltip("Minimum input required before a left or right is recognized. Avoids drifting with sticky controllers"),
+     Range(0.01f, 0.99f)]
+    public float HorizontalDeadZoneThreshold = 0.1f;
+
+    [Header("MOVEMENT")] [Tooltip("The top horizontal movement speed")]
+    public float MaxSpeed = 14;
+
+    [Tooltip("The player's capacity to gain horizontal speed")]
+    public float Acceleration = 120;
+
+    [Tooltip("The pace at which the player comes to a stop")]
+    public float GroundDeceleration = 60;
+
+    [Tooltip("Deceleration in air only after stopping input mid-air")]
+    public float AirDeceleration = 30;
+
+    [Tooltip("A constant downward force applied while grounded. Helps on slopes"), Range(0f, -10f)]
+    public float GroundingForce = -1.5f;
+
+    [Tooltip("The detection distance for grounding and roof detection"), Range(0f, 0.25f)]
+    public float GrounderDistance = 0.25f;
+
+    [Header("JUMP")] [Tooltip("The immediate velocity applied when jumping")]
+    public float JumpPower = 36;
+
+    [Tooltip("The maximum vertical movement speed")]
+    public float MaxFallSpeed = 40;
+
+    [Tooltip("The player's capacity to gain fall speed. a.k.a. In Air Gravity")]
+    public float FallAcceleration = 110;
+
+    [Tooltip("The gravity multiplier added when jump is released early")]
+    public float JumpEndEarlyGravityModifier = 3;
+
+    [Tooltip(
+        "The time before coyote jump becomes unusable. Coyote jump allows jump to execute even after leaving a ledge")]
+    public float CoyoteTime = .15f;
+
+    [Tooltip("The amount of time we buffer a jump. This allows jump input before actually hitting the ground")]
+    public float JumpBuffer = .2f;
+
+
+    #region Interface
+
+    public Vector2 FrameInput => _frameInput.Move;
+    public event Action<bool, float> GroundedChanged;
+    public event Action Jumped;
+
+    #endregion
+
+    private float _time;
 
     private void Awake()
     {
         _rb = GetComponent<Rigidbody2D>();
+        _col = GetComponent<CapsuleCollider2D>();
+
+        _cachedQueryStartInColliders = Physics2D.queriesStartInColliders;
     }
 
     private void Update()
     {
-        _moveInput = Input.GetAxisRaw("Horizontal");
-        _climbInput = Input.GetAxisRaw("Vertical");
-        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
-        isTouchingWall = Physics2D.OverlapBox(wallCheck.position, wallCheckSize, 0, groundLayer);
+        _time += Time.deltaTime;
+        GatherInput();
+    }
 
-        if (Input.GetKeyDown(KeyCode.Period) && isGrounded)
+    private void GatherInput()
+    {
+        _frameInput = new FrameInput
         {
-            Jump();
+            JumpDown = Input.GetKeyDown(KeyCode.Period),
+            JumpHeld = Input.GetKey(KeyCode.Period),
+            Move = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"))
+        };
+
+        if (SnapInput)
+        {
+            _frameInput.Move.x = Mathf.Abs(_frameInput.Move.x) < HorizontalDeadZoneThreshold
+                ? 0
+                : Mathf.Sign(_frameInput.Move.x);
+            _frameInput.Move.y = Mathf.Abs(_frameInput.Move.y) < VerticalDeadZoneThreshold
+                ? 0
+                : Mathf.Sign(_frameInput.Move.y);
         }
 
-        if (Input.GetButtonDown("Dash") && _canDash)
+        if (_frameInput.JumpDown)
         {
-            StartDash();
+            _jumpToConsume = true;
+            _timeJumpWasPressed = _time;
         }
-
-        if (_climbInput is > 0 or < 0 && isTouchingWall)
-        {
-            isClimbing = true;
-        }
-        else if (!isTouchingWall || Input.GetAxisRaw("Vertical") == 0)
-        {
-            isClimbing = false;
-        }
-
-        if (isGrounded && !_isDashing)
-        {
-            _canDash = true;
-        }
-
-        Flip();
     }
 
     private void FixedUpdate()
     {
-        if (_isDashing) return;
+        CheckCollisions();
 
-        if (isClimbing)
+        HandleJump();
+        HandleDirection();
+        HandleGravity();
+
+        ApplyMovement();
+    }
+
+    #region Collisions
+
+    private float _frameLeftGrounded = float.MinValue;
+    [FormerlySerializedAs("_grounded")] [SerializeField] private bool grounded;
+
+    private void CheckCollisions()
+    {
+        Physics2D.queriesStartInColliders = false;
+
+        // Ground and Ceiling
+        bool groundHit = Physics2D.CapsuleCast(_col.bounds.center, _col.size, _col.direction, 0, Vector2.down,
+            GrounderDistance, PlayerLayer);
+        bool ceilingHit = Physics2D.CapsuleCast(_col.bounds.center, _col.size, _col.direction, 0, Vector2.up,
+            GrounderDistance, ~PlayerLayer);
+
+        // Hit a Ceiling
+        if (ceilingHit) _frameVelocity.y = Mathf.Min(0, _frameVelocity.y);
+
+        // Landed on the Ground
+        if (!grounded && groundHit)
         {
-            Climb();
+            grounded = true;
+            _coyoteUsable = true;
+            _bufferedJumpUsable = true;
+            _endedJumpEarly = false;
+            GroundedChanged?.Invoke(true, Mathf.Abs(_frameVelocity.y));
+        }
+        // Left the Ground
+        else if (grounded && !groundHit)
+        {
+            grounded = false;
+            _frameLeftGrounded = _time;
+            GroundedChanged?.Invoke(false, 0);
         }
 
-        Run();
-        SetJumpFallSpeed();
+        Physics2D.queriesStartInColliders = _cachedQueryStartInColliders;
     }
 
-    private void Climb()
+    #endregion
+
+
+    #region Jumping
+
+    private bool _jumpToConsume;
+    private bool _bufferedJumpUsable;
+    private bool _endedJumpEarly;
+    private bool _coyoteUsable;
+    private float _timeJumpWasPressed;
+
+    private bool HasBufferedJump => _bufferedJumpUsable && _time < _timeJumpWasPressed + JumpBuffer;
+    private bool CanUseCoyote => _coyoteUsable && !grounded && _time < _frameLeftGrounded + CoyoteTime;
+
+    private void HandleJump()
     {
-        _rb.velocity = new Vector2(_rb.velocity.x, _climbInput * climbSpeed);
+        if (!_endedJumpEarly && !grounded && !_frameInput.JumpHeld && _rb.velocity.y > 0) _endedJumpEarly = true;
+
+        if (!_jumpToConsume && !HasBufferedJump) return;
+
+        if (grounded || CanUseCoyote) ExecuteJump();
+
+        _jumpToConsume = false;
     }
 
-    private void StartDash()
+    private void ExecuteJump()
     {
-        _isDashing = true;
-        _canDash = false;
+        _endedJumpEarly = false;
+        _timeJumpWasPressed = 0;
+        _bufferedJumpUsable = false;
+        _coyoteUsable = false;
+        _frameVelocity.y = JumpPower;
+        Jumped?.Invoke();
+    }
 
-        _rb.velocity = new Vector2(_rb.velocity.x, 0); 
+    #endregion
 
-        _dashDirection = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+    #region Horizontal
 
-        if (_dashDirection == Vector2.zero)
+    private void HandleDirection()
+    {
+        if (_frameInput.Move.x == 0)
         {
-            _dashDirection = new Vector2(transform.localScale.x, 0);
+            var deceleration = grounded ? GroundDeceleration : AirDeceleration;
+            _frameVelocity.x = Mathf.MoveTowards(_frameVelocity.x, 0, deceleration * Time.fixedDeltaTime);
         }
-
-        _dashDirection.Normalize();
-        _rb.velocity = _dashDirection * dashVelocity;
-
-        StartCoroutine(StopDash());
-    }
-
-
-    private IEnumerator StopDash()
-    {
-        yield return new WaitForSeconds(dashTime);
-        _isDashing = false;
-
-        _rb.velocity = new Vector2(_rb.velocity.x, 0); 
-    }
-
-
-    private void Jump()
-    {
-        _rb.velocity = new Vector2(_rb.velocity.x, jumpVelocity);
-    }
-
-    private void SetJumpFallSpeed()
-    {
-        switch (_rb.velocity.y)
+        else
         {
-            case < 0:
-                _rb.velocity += Vector2.up * ((Physics2D.gravity.y * (fallMultiplier - 1)) * Time.fixedDeltaTime);
-                break;
-            case > 0 when !(Input.GetKey(KeyCode.Period)):
-                _rb.velocity += Vector2.up * ((Physics2D.gravity.y * (lowJumpMultiplier - 1)) * Time.fixedDeltaTime);
-                break;
+            _frameVelocity.x = Mathf.MoveTowards(_frameVelocity.x, _frameInput.Move.x * MaxSpeed,
+                Acceleration * Time.fixedDeltaTime);
         }
     }
 
-    private void Run()
-    {
-        _rb.velocity = _moveInput != 0
-            ? new Vector2(_moveInput * moveSpeed, _rb.velocity.y)
-            : new Vector2(0, _rb.velocity.y);
-    }
+    #endregion
 
-    private void OnDrawGizmos()
+    #region Gravity
+
+    private void HandleGravity()
     {
-        if (wallCheck == null) return;
+        if (grounded && _frameVelocity.y <= 0f)
         {
-            Gizmos.color = Color.green;
-            Gizmos.DrawWireCube(wallCheck.position, wallCheckSize);
+            _frameVelocity.y = GroundingForce;
         }
-        if (groundCheck == null) return;
-        Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+        else
+        {
+            var inAirGravity = FallAcceleration;
+            if (_endedJumpEarly && _frameVelocity.y > 0) inAirGravity *= JumpEndEarlyGravityModifier;
+            _frameVelocity.y = Mathf.MoveTowards(_frameVelocity.y, -MaxFallSpeed, inAirGravity * Time.fixedDeltaTime);
+        }
     }
 
-    private void Flip()
-    {
-        transform.localScale = _moveInput switch
-        {
-            > 0 => new Vector3((float)1.5, (float)1.5, 1),
-            < 0 => new Vector3((float)-1.5, (float)1.5, 1),
-            _ => transform.localScale
-        };
-    }
+    #endregion
+
+    private void ApplyMovement() => _rb.velocity = _frameVelocity;
+}
+
+public struct FrameInput
+{
+    public bool JumpDown;
+    public bool JumpHeld;
+    public Vector2 Move;
+}
+
+public interface IPlayerController
+{
+    public event Action<bool, float> GroundedChanged;
+
+    public event Action Jumped;
+    public Vector2 FrameInput { get; }
 }
