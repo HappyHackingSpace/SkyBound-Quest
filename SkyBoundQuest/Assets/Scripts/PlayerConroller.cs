@@ -11,11 +11,11 @@ public class PlayerController : MonoBehaviour, IPlayerController
     private Vector2 _frameVelocity;
     private bool _cachedQueryStartInColliders;
     [SerializeField] private float dashTime = 0.1f;
-    [SerializeField] private Vector2 _dashDirection;
-    [SerializeField] private float dashVelocity = 15f;
-    [SerializeField] private bool _isDashing;
-    [SerializeField] private bool _canDash = true;
-    
+    [SerializeField] private Vector2 dashDirection;
+    [SerializeField] private float dashVelocity = 28f;
+    [SerializeField] private bool isDashing;
+    [SerializeField] private bool canDash = true;
+
     public float climbInput;
     [SerializeField] private bool isClimbing;
     [SerializeField] private float climbSpeed = 3f;
@@ -24,58 +24,64 @@ public class PlayerController : MonoBehaviour, IPlayerController
     [SerializeField] private Transform wallCheck;
 
     [Header("LAYERS")] [Tooltip("Set this to the layer your player is on")]
-    public LayerMask PlayerLayer;
+    public LayerMask playerLayer;
 
     [Header("INPUT")]
     [Tooltip(
         "Makes all Input snap to an integer. Prevents gamepads from walking slowly. Recommended value is true to ensure gamepad/keybaord parity.")]
-    public bool SnapInput = true;
+    public bool snapInput = true;
 
     [Tooltip(
          "Minimum input required before you mount a ladder or climb a ledge. Avoids unwanted climbing using controllers"),
      Range(0.01f, 0.99f)]
-    public float VerticalDeadZoneThreshold = 0.3f;
+    public float verticalDeadZoneThreshold = 0.3f;
 
     [Tooltip("Minimum input required before a left or right is recognized. Avoids drifting with sticky controllers"),
      Range(0.01f, 0.99f)]
-    public float HorizontalDeadZoneThreshold = 0.1f;
+    public float horizontalDeadZoneThreshold = 0.1f;
 
     [Header("MOVEMENT")] [Tooltip("The top horizontal movement speed")]
-    public float MaxSpeed = 14;
+    public float maxSpeed = 8;
 
     [Tooltip("The player's capacity to gain horizontal speed")]
-    public float Acceleration = 120;
+    public float acceleration = 120;
 
-    [Tooltip("The pace at which the player comes to a stop")]
-    public float GroundDeceleration = 60;
+    [FormerlySerializedAs("GroundDeceleration")] [Tooltip("The pace at which the player comes to a stop")]
+    public float groundDeceleration = 140;
 
-    [Tooltip("Deceleration in air only after stopping input mid-air")]
-    public float AirDeceleration = 30;
+    [FormerlySerializedAs("AirDeceleration")] [Tooltip("Deceleration in air only after stopping input mid-air")]
+    public float airDeceleration = 30;
 
+    [FormerlySerializedAs("GroundingForce")]
     [Tooltip("A constant downward force applied while grounded. Helps on slopes"), Range(0f, -10f)]
-    public float GroundingForce = -1.5f;
+    public float groundingForce = -1.5f;
 
+    [FormerlySerializedAs("GrounderDistance")]
     [Tooltip("The detection distance for grounding and roof detection"), Range(0f, 0.25f)]
-    public float GrounderDistance = 0.25f;
+    public float grounderDistance = 0.25f;
 
-    [Header("JUMP")] [Tooltip("The immediate velocity applied when jumping")]
-    public float JumpPower = 36;
+    [FormerlySerializedAs("JumpPower")] [Header("JUMP")] [Tooltip("The immediate velocity applied when jumping")]
+    public float jumpPower = 25;
 
-    [Tooltip("The maximum vertical movement speed")]
-    public float MaxFallSpeed = 40;
+    [FormerlySerializedAs("MaxFallSpeed")] [Tooltip("The maximum vertical movement speed")]
+    public float maxFallSpeed = 20;
 
+    [FormerlySerializedAs("FallAcceleration")]
     [Tooltip("The player's capacity to gain fall speed. a.k.a. In Air Gravity")]
-    public float FallAcceleration = 110;
+    public float fallAcceleration = 110;
 
+    [FormerlySerializedAs("JumpEndEarlyGravityModifier")]
     [Tooltip("The gravity multiplier added when jump is released early")]
-    public float JumpEndEarlyGravityModifier = 3;
+    public float jumpEndEarlyGravityModifier = 5;
 
+    [FormerlySerializedAs("CoyoteTime")]
     [Tooltip(
         "The time before coyote jump becomes unusable. Coyote jump allows jump to execute even after leaving a ledge")]
-    public float CoyoteTime = .15f;
+    public float coyoteTime = .15f;
 
+    [FormerlySerializedAs("JumpBuffer")]
     [Tooltip("The amount of time we buffer a jump. This allows jump input before actually hitting the ground")]
-    public float JumpBuffer = .2f;
+    public float jumpBuffer = .2f;
 
 
     #region Interface
@@ -98,12 +104,11 @@ public class PlayerController : MonoBehaviour, IPlayerController
 
     private void Update()
     {
+        Flip();
         climbInput = Input.GetAxisRaw("Vertical");
 
-        // FIRST: Check if touching a wall
-        isTouchingWall = Physics2D.OverlapBox(wallCheck.position, wallCheckSize, 0, PlayerLayer);
+        isTouchingWall = Physics2D.OverlapBox(wallCheck.position, wallCheckSize, 0, playerLayer);
 
-        // THEN: Check if we should start climbing
         if (climbInput != 0 && isTouchingWall)
         {
             isClimbing = true;
@@ -115,13 +120,14 @@ public class PlayerController : MonoBehaviour, IPlayerController
 
         _time += Time.deltaTime;
         GatherInput();
-        if (Input.GetButtonDown("Dash") && _canDash)
+        if (Input.GetButtonDown("Dash") && canDash)
         {
             StartDash();
         }
-        if (grounded && !_isDashing)
+
+        if (grounded && !isDashing)
         {
-            _canDash = true;
+            canDash = true;
         }
     }
 
@@ -135,12 +141,12 @@ public class PlayerController : MonoBehaviour, IPlayerController
             Move = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")),
         };
 
-        if (SnapInput)
+        if (snapInput)
         {
-            _frameInput.Move.x = Mathf.Abs(_frameInput.Move.x) < HorizontalDeadZoneThreshold
+            _frameInput.Move.x = Mathf.Abs(_frameInput.Move.x) < horizontalDeadZoneThreshold
                 ? 0
                 : Mathf.Sign(_frameInput.Move.x);
-            _frameInput.Move.y = Mathf.Abs(_frameInput.Move.y) < VerticalDeadZoneThreshold
+            _frameInput.Move.y = Mathf.Abs(_frameInput.Move.y) < verticalDeadZoneThreshold
                 ? 0
                 : Mathf.Sign(_frameInput.Move.y);
         }
@@ -154,8 +160,7 @@ public class PlayerController : MonoBehaviour, IPlayerController
 
     private void FixedUpdate()
     {
-        
-        if (_isDashing) return;
+        if (isDashing) return;
         CheckCollisions();
 
         HandleJump();
@@ -168,22 +173,21 @@ public class PlayerController : MonoBehaviour, IPlayerController
     #region Collisions
 
     private float _frameLeftGrounded = float.MinValue;
-    [FormerlySerializedAs("_grounded")] [SerializeField] private bool grounded;
+
+    [FormerlySerializedAs("_grounded")] [SerializeField]
+    private bool grounded;
 
     private void CheckCollisions()
     {
         Physics2D.queriesStartInColliders = false;
 
-        // Ground and Ceiling
         bool groundHit = Physics2D.CapsuleCast(_col.bounds.center, _col.size, _col.direction, 0, Vector2.down,
-            GrounderDistance, PlayerLayer);
+            grounderDistance, playerLayer);
         bool ceilingHit = Physics2D.CapsuleCast(_col.bounds.center, _col.size, _col.direction, 0, Vector2.up,
-            GrounderDistance, ~PlayerLayer);
+            grounderDistance, ~playerLayer);
 
-        // Hit a Ceiling
         if (ceilingHit) _frameVelocity.y = Mathf.Min(0, _frameVelocity.y);
 
-        // Landed on the Ground
         if (!grounded && groundHit)
         {
             grounded = true;
@@ -192,7 +196,6 @@ public class PlayerController : MonoBehaviour, IPlayerController
             _endedJumpEarly = false;
             GroundedChanged?.Invoke(true, Mathf.Abs(_frameVelocity.y));
         }
-        // Left the Ground
         else if (grounded && !groundHit)
         {
             grounded = false;
@@ -214,8 +217,8 @@ public class PlayerController : MonoBehaviour, IPlayerController
     private bool _coyoteUsable;
     private float _timeJumpWasPressed;
 
-    private bool HasBufferedJump => _bufferedJumpUsable && _time < _timeJumpWasPressed + JumpBuffer;
-    private bool CanUseCoyote => _coyoteUsable && !grounded && _time < _frameLeftGrounded + CoyoteTime;
+    private bool HasBufferedJump => _bufferedJumpUsable && _time < _timeJumpWasPressed + jumpBuffer;
+    private bool CanUseCoyote => _coyoteUsable && !grounded && _time < _frameLeftGrounded + coyoteTime;
 
     private void HandleJump()
     {
@@ -234,39 +237,39 @@ public class PlayerController : MonoBehaviour, IPlayerController
         _timeJumpWasPressed = 0;
         _bufferedJumpUsable = false;
         _coyoteUsable = false;
-        _frameVelocity.y = JumpPower;
+        _frameVelocity.y = jumpPower;
         Jumped?.Invoke();
     }
 
     #endregion
 
     #region Dashing
+
     private void StartDash()
     {
-        _isDashing = true;
-        _canDash = false;
+        isDashing = true;
+        canDash = false;
 
-        _dashDirection = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        dashDirection = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
 
-        if (_dashDirection == Vector2.zero)
+        if (dashDirection == Vector2.zero)
         {
-            _dashDirection = new Vector2(transform.localScale.x, 0);
+            dashDirection = new Vector2(transform.localScale.x, 0);
         }
 
-        _dashDirection.Normalize();
-        _rb.velocity = _dashDirection * dashVelocity;
+        dashDirection.Normalize();
+        _rb.velocity = dashDirection * dashVelocity;
 
         StartCoroutine(StopDash());
     }
-    
+
     private IEnumerator StopDash()
     {
         yield return new WaitForSeconds(dashTime);
-        _isDashing = false;
+        isDashing = false;
 
         _rb.velocity = new Vector2(0, _rb.velocity.y);
     }
-
 
     #endregion
 
@@ -282,9 +285,6 @@ public class PlayerController : MonoBehaviour, IPlayerController
     }
 
     #endregion
-    #region Climbing
-
-    #endregion
 
     #region Horizontal
 
@@ -292,18 +292,18 @@ public class PlayerController : MonoBehaviour, IPlayerController
     {
         if (_frameInput.Move.x == 0)
         {
-            var deceleration = grounded ? GroundDeceleration : AirDeceleration;
+            var deceleration = grounded ? groundDeceleration : airDeceleration;
             _frameVelocity.x = Mathf.MoveTowards(_frameVelocity.x, 0, deceleration * Time.fixedDeltaTime);
         }
         else
         {
-            _frameVelocity.x = Mathf.MoveTowards(_frameVelocity.x, _frameInput.Move.x * MaxSpeed,
-                Acceleration * Time.fixedDeltaTime);
+            _frameVelocity.x = Mathf.MoveTowards(_frameVelocity.x, _frameInput.Move.x * maxSpeed,
+                acceleration * Time.fixedDeltaTime);
         }
     }
 
     #endregion
-    
+
 
     #region Gravity
 
@@ -311,38 +311,43 @@ public class PlayerController : MonoBehaviour, IPlayerController
     {
         if (isClimbing)
         {
-            _frameVelocity.y = 0; // Stop gravity influence when climbing
+            _frameVelocity.y = 0;
             return;
         }
-    
+
         if (grounded && _frameVelocity.y <= 0f)
         {
-            _frameVelocity.y = GroundingForce;
+            _frameVelocity.y = groundingForce;
         }
         else
         {
-            var inAirGravity = FallAcceleration;
-            if (_endedJumpEarly && _frameVelocity.y > 0) inAirGravity *= JumpEndEarlyGravityModifier;
-            _frameVelocity.y = Mathf.MoveTowards(_frameVelocity.y, -MaxFallSpeed, inAirGravity * Time.fixedDeltaTime);
+            var inAirGravity = fallAcceleration;
+            if (_endedJumpEarly && _frameVelocity.y > 0) inAirGravity *= jumpEndEarlyGravityModifier;
+            _frameVelocity.y = Mathf.MoveTowards(_frameVelocity.y, -maxFallSpeed, inAirGravity * Time.fixedDeltaTime);
         }
     }
 
+    #endregion
+
+    #region FlipFace
+
+    private void Flip()
+    {
+        transform.localScale = _frameInput.Move.x switch
+        {
+            > 0 => new Vector3(2, 2, 1),
+            < 0 => new Vector3(-2, 2, 1),
+            _ => transform.localScale
+        };
+    }
 
     #endregion
-    
+
 
     private void ApplyMovement()
     {
-        if (isClimbing)
-        {
-            _rb.velocity = new Vector2(_rb.velocity.x, climbInput * climbSpeed);
-        }
-        else
-        {
-            _rb.velocity = _frameVelocity;
-        }
+        _rb.velocity = isClimbing ? new Vector2(_rb.velocity.x, climbInput * climbSpeed) : _frameVelocity;
     }
-
 }
 
 public struct FrameInput
