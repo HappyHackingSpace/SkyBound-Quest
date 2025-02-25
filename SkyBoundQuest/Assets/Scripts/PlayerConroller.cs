@@ -268,7 +268,6 @@ public class PlayerController : MonoBehaviour, IPlayerController
         yield return new WaitForSeconds(dashTime);
         isDashing = false;
 
-        _rb.velocity = new Vector2(0, _rb.velocity.y);
     }
 
     #endregion
