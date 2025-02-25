@@ -1,5 +1,4 @@
 using UnityEngine;
-
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
@@ -25,6 +24,12 @@ public class GameManager : MonoBehaviour
         }
     }
 
+
+
+    #region RuntimeInitalizeOnLoad
+
+    
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Initialize()
     {
@@ -44,4 +49,5 @@ public class GameManager : MonoBehaviour
         _player.transform.position = _spawnPoint.transform.position;
         _player.gameObject.SetActive(true);
     }
+    #endregion
 }
