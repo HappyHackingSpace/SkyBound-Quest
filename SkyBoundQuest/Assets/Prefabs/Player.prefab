@@ -107,7 +107,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -13.7501, y: -4.7495, z: 0}
-  m_LocalScale: {x: 1.5, y: 1.5, z: 1}
+  m_LocalScale: {x: 2, y: 2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2137856923179198712}
@@ -214,26 +214,26 @@ MonoBehaviour:
   isClimbing: 0
   climbSpeed: 3
   isTouchingWall: 0
-  wallCheckSize: {x: 0, y: 0}
-  wallCheck: {fileID: 0}
+  wallCheckSize: {x: 0.08, y: 0.66}
+  wallCheck: {fileID: 8202370632587097043}
   playerLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 8
   snapInput: 1
   verticalDeadZoneThreshold: 0.3
   horizontalDeadZoneThreshold: 0.1
   maxSpeed: 8
   acceleration: 120
-  groundDeceleration: 60
+  groundDeceleration: 65
   airDeceleration: 30
   groundingForce: -1.5
-  grounderDistance: 0.05
-  jumpPower: 36
-  maxFallSpeed: 40
+  grounderDistance: 0.25
+  jumpPower: 25
+  maxFallSpeed: 20
   fallAcceleration: 110
-  jumpEndEarlyGravityModifier: 3
-  coyoteTime: 0.15
-  jumpBuffer: 0.2
+  jumpEndEarlyGravityModifier: 5
+  coyoteTime: 0.12
+  jumpBuffer: 0.15
   grounded: 0
 --- !u!70 &1916778508246000842
 CapsuleCollider2D:
@@ -267,8 +267,8 @@ CapsuleCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.0016047161, y: -0.0056813955}
-  m_Size: {x: 0.24489848, y: 0.4192358}
+  m_Offset: {x: -0.0006608963, y: -0.0056813955}
+  m_Size: {x: 0.2494297, y: 0.4192358}
   m_Direction: 0
 --- !u!1 &8191817820935840987
 GameObject:
@@ -295,7 +295,7 @@ Transform:
   m_GameObject: {fileID: 8191817820935840987}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.141, y: -0.0117, z: 0}
+  m_LocalPosition: {x: 0.127, y: -0.024, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

@@ -23,13 +23,9 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
         }
     }
-
-
-
-    #region RuntimeInitalizeOnLoad
-
     
-
+    #region RuntimeInitalizeOnLoad
+    
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Initialize()
     {
@@ -38,14 +34,28 @@ public class GameManager : MonoBehaviour
         obj.AddComponent<GameManager>();
     }
 
+    #endregion
+    
+    #region PlayerManagement
+
     public void KillPlayer()
     {
+        if (_player == null)
+            _player = GameObject.FindGameObjectWithTag("Player");
+
+        if (_player == null) return;
         _player.gameObject.SetActive(false);
         Invoke(nameof(RespawnPlayer), 2f);
     }
-
     public void RespawnPlayer()
     {
+        if (_spawnPoint == null)
+            _spawnPoint = GameObject.FindGameObjectWithTag("SpawnPoint");
+
+        if (_player == null)
+            _player = GameObject.FindGameObjectWithTag("Player");
+
+        if (_player == null || _spawnPoint == null) return;
         _player.transform.position = _spawnPoint.transform.position;
         _player.gameObject.SetActive(true);
     }
