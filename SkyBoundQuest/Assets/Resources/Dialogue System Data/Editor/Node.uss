@@ -1,0 +1,49 @@
+DialogueNode #title {
+    background-color: rgb(14, 77, 80);
+}
+
+.choice-container {
+    flex-direction: row;
+    align-items: center;
+    align-content: flex-start;
+}
+
+.dialogueNodeMainContainer {
+    background-color: rgba(21, 21, 21, 0.51); /* Replace with your desired color */
+}
+
+.title-label {
+    font-size: 18px;
+    margin: 5px;
+}
+
+.header-label {
+    font-size: 14px;
+    margin-left: 5px;
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+
+.message-container {
+    margin-top: 15px;
+    max-width: 400px;
+}
+
+.row-container {
+    flex-direction: row;
+    align-items: center;
+}
+
+.sized-input {
+    width: 200px;
+}
+
+.new-message-button {
+    align-self: flex-end;
+    height:30px;
+    justify-content: flex-end;
+}
+
+.toggle{
+    align-self: center;
+}

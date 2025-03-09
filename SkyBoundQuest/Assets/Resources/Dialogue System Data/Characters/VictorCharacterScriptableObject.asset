@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10a856104a895dc44bad575fdc4d698b, type: 3}
+  m_Name: VictorCharacterScriptableObject
+  m_EditorClassIdentifier: 
+  characterName: Victor
+  speakingSound: {fileID: 8300000, guid: e884bc21eb79fde42816deea8251b7ff, type: 3}
+  defaultState:
+    emotionLabel: 0
+    speakingSoundPitch: 1
+    reactionSound:
+      enabled: 0
+      value: {fileID: 0}
+    characterFace:
+      enabled: 1
+      value: {fileID: 21300000, guid: 4b9ada37f22f7604f8f395562472070e, type: 3}
+  states:
+  - emotionLabel: 11
+    speakingSoundPitch: 1.13
+    reactionSound:
+      enabled: 0
+      value: {fileID: 0}
+    characterFace:
+      enabled: 1
+      value: {fileID: 21300000, guid: 847d85bc66f56914ebeb804be9e7f9ff, type: 3}

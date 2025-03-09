@@ -7516,6 +7516,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 7118229714830755175, guid: 5ac57b94fd8aa3a409a3099f6553fac9, type: 3}
+      propertyPath: maxSpeed
+      value: 6
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7589,6 +7593,14 @@ PrefabInstance:
     - target: {fileID: 1550725251061861773, guid: b3c09f17cd7c716428b464b75126bb7b, type: 3}
       propertyPath: m_Name
       value: Main Camera
+      objectReference: {fileID: 0}
+    - target: {fileID: 1833511207873070819, guid: b3c09f17cd7c716428b464b75126bb7b, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1833511207873070819, guid: b3c09f17cd7c716428b464b75126bb7b, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3786991607536965092, guid: b3c09f17cd7c716428b464b75126bb7b, type: 3}
       propertyPath: m_LocalPosition.x

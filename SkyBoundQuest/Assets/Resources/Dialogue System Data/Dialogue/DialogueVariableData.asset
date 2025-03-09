@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 89028a3e253c40b190c5086a7b47f0fd, type: 3}
+  m_Name: DialogueVariableData
+  m_EditorClassIdentifier: 
+  variables:
+  - rid: 7082288801124974616
+  - rid: 7082288801124974617
+  - rid: 7082288801124974618
+  references:
+    version: 2
+    RefIds:
+    - rid: 7082288801124974616
+      type: {class: FloatVariable, ns: DialogueSystem.Data, asm: Assembly-CSharp}
+      data:
+        <Name>k__BackingField: cost_coffee
+        floatValue: 1.5
+    - rid: 7082288801124974617
+      type: {class: IntVariable, ns: DialogueSystem.Data, asm: Assembly-CSharp}
+      data:
+        <Name>k__BackingField: cost_bread
+        intValue: 1
+    - rid: 7082288801124974618
+      type: {class: StringVariable, ns: DialogueSystem.Data, asm: Assembly-CSharp}
+      data:
+        <Name>k__BackingField: character
+        stringValue: John
