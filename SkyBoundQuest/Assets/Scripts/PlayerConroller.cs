@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Serialization;
+using DialogueSystem.Runtime.Narration;
 
 public class PlayerController : MonoBehaviour, IPlayerController
 {
@@ -83,7 +84,8 @@ public class PlayerController : MonoBehaviour, IPlayerController
     [Tooltip("The amount of time we buffer a jump. This allows jump input before actually hitting the ground")]
     public float jumpBuffer = .2f;
 
-
+    [SerializeField] private NarrativeController narrativeController;
+    public Vector2 InputDirection { get; private set; }
     #region Interface
 
     public Vector2 FrameInput => _frameInput.Move;
@@ -160,7 +162,13 @@ public class PlayerController : MonoBehaviour, IPlayerController
 
     private void FixedUpdate()
     {
+        if (narrativeController.IsNarrating)
+        {
+            return;
+        }
         if (isDashing) return;
+        InputDirection = new Vector2(Input.GetAxisRaw("Horizontal"), 0);
+
         CheckCollisions();
 
         HandleJump();

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace DialogueSystem.Scene
 {
-    public class PlayerControllerExample : MonoBehaviour
+    public class PlayerController : MonoBehaviour
     {
         [SerializeField] private float moveSpeed;
         [SerializeField] private NarrativeController narrativeController;

@@ -18,7 +18,7 @@ namespace DialogueSystem.Runtime.Utility
 
         public Narrative LoadNarrative(DialogueContainer narrative)
         {
-            if (narrative != null)
+            if (narrative is not null)
             {
                 narrativeToLoad = narrative;
             }
@@ -26,6 +26,7 @@ namespace DialogueSystem.Runtime.Utility
             return LoadNarrativeFromData();
         }
 
+        // ReSharper disable Unity.PerformanceAnalysis
         private Narrative LoadNarrativeFromData()
         {
             if (narrativeToLoad == null)

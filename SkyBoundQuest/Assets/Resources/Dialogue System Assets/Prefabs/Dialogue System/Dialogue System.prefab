@@ -32,7 +32,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5527091357107022938}
-  m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
@@ -54,8 +53,8 @@ MonoBehaviour:
   textTyper: {fileID: 7044367008953306730}
   speakerNameText: {fileID: 0}
   messageTextContainer: {fileID: 0}
-  buttonPrefab: {fileID: 0}
-  disabledButtonPrefab: {fileID: 0}
+  buttonPrefab: {fileID: 1851353415986813201, guid: cddc6c7c60e7316439d45cc2baa0952b, type: 3}
+  disabledButtonPrefab: {fileID: 1851353415986813201, guid: f052b6a0606a3f747b3ccfac2cd3c684, type: 3}
   buttonsParent: {fileID: 0}
   nextMessageButton: {fileID: 0}
   buttonOffset: {x: 20, y: 20}
@@ -126,7 +125,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2410153920939288306}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -134,7 +134,6 @@ Transform:
   - {fileID: 51844100337906665}
   - {fileID: 1940205965017568412}
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &718990699374184701
 MonoBehaviour:
@@ -164,7 +163,13 @@ MonoBehaviour:
   narrativeUI: {fileID: 708971640602487698}
   narrativeLoader: {fileID: 718990699374184701}
   commandExecutionHandler: {fileID: 1977219144382408722}
-  resetNarrativeOnLoad: 1
+  resetNarrativeOnLoad: 0
+  onNarrativeStart:
+    m_PersistentCalls:
+      m_Calls: []
+  onNarrativeEnd:
+    m_PersistentCalls:
+      m_Calls: []
   defaultCharacterData: {fileID: 11400000, guid: a1fb6b12dfc84004496280234d98e3d5, type: 2}
 --- !u!114 &1977219144382408722
 MonoBehaviour:
@@ -417,13 +422,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6789845980442134572}
+  serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5527091357107022938}
-  m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1629743892748872759
 MonoBehaviour:

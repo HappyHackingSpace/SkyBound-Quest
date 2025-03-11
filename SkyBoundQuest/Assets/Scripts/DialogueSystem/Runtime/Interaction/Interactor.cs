@@ -1,5 +1,6 @@
 ﻿using DialogueSystem.Scene;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace DialogueSystem.Runtime.Interaction
 {
@@ -8,20 +9,22 @@ namespace DialogueSystem.Runtime.Interaction
         [SerializeField] private Transform interactSource;
         [SerializeField] private float interactionDistance;
         [SerializeField] private LayerMask interactableLayer;
-        [SerializeField] private PlayerControllerExample playerControllerExample; //To replace with your player controller
+        [SerializeField] private PlayerController playerController; // To replace with your player controller
 
         private const KeyCode InteractionKey = KeyCode.Return;
-        private Vector3 _rayDirection;
-    
+        private Vector2 _rayDirection;
+
         private void Update()
         {
             CalculateInputDirection();
             InteractWithCharacter();
         }
-    
-        private void CalculateInputDirection() => 
-            _rayDirection = playerControllerExample.InputDirection == Vector3.zero ? _rayDirection : playerControllerExample.InputDirection;
 
+        private void CalculateInputDirection()
+        {
+            Vector2 inputDir = playerController.InputDirection;
+            _rayDirection = inputDir == Vector2.zero ? _rayDirection : inputDir;
+        }
 
         private void InteractWithCharacter()
         {
@@ -30,31 +33,38 @@ namespace DialogueSystem.Runtime.Interaction
                 return;
             }
 
-            var ray = new Ray(interactSource.position, _rayDirection);
+            // Use Physics2D.Raycast instead of Physics.Raycast
+            RaycastHit2D hit = Physics2D.Raycast(interactSource.position, _rayDirection, interactionDistance, interactableLayer);
 
-            if (!Physics.Raycast(ray, out var hit, interactionDistance, interactableLayer))
+            if (hit.collider != null)
             {
-                return;
+                Debug.Log($"Raycast hit: {hit.collider.name} at {hit.point}");
+
+                var interactable = hit.collider.GetComponent<IInteractable>();
+
+                if (interactable != null && interactable.CanInteract)
+                {
+                    interactable.Interact();
+                }
             }
-
-            var interactable = hit.collider.GetComponent<IInteractable>();
-
-            if (interactable.CanInteract)
+            else
             {
-                interactable.Interact();
+                Debug.Log("Raycast did not hit any interactable object.");
             }
         }
 
         private void OnDrawGizmos()
         {
-            var rayOrigin = interactSource.position;
-            var rayDirection = _rayDirection;
+            if (interactSource == null) return;
 
-            Gizmos.color = Color.red;
-            Gizmos.DrawRay(rayOrigin, rayDirection * interactionDistance);
+            Vector2 rayOrigin = interactSource.position;
+            Vector2 rayDirection = _rayDirection.normalized * interactionDistance;
+
+            // Use Physics2D.Raycast for Gizmos color change
+            bool hitSomething = Physics2D.Raycast(rayOrigin, _rayDirection, interactionDistance, interactableLayer);
+
+            Gizmos.color = hitSomething ? Color.green : Color.red;
+            Gizmos.DrawRay(rayOrigin, rayDirection);
         }
-    
-    
-
     }
 }
